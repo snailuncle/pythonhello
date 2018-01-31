@@ -6,12 +6,12 @@ from bs4 import BeautifulSoup
 
 
 # 获取网页字符串
-def getHTMLText(url):
+def getHTMLText(url, code="utf-8"):
     print("getHTMLText", url)
     try:
         r = requests.get(url)
         r.raise_for_status()
-        r.encoding = r.apparent_encoding()
+        r.encoding = code
         return r.text
     except BaseException:
         print("getHTMLText", "异常")
@@ -21,18 +21,29 @@ def getHTMLText(url):
 # 获取股票列表
 # <a target="_blank" href="http://quote.eastmoney.com/sh500006.html">基金裕阳(500006)</a>
 def getStockList(lst, stockURL):  # 股票列表
-    html = getHTMLText(stockURL)  # 获取网页
-    soup = BeautifulSoup(html, "html.parse")  # 解析网页为r对象
+    html = getHTMLText(stockURL, "GB2312")  # 获取网页
+    soup = BeautifulSoup(html, "html.parser")  # 解析网页为r对象
     # find_all( name , attrs , recursive , string , **kwargs )
     # find_all() 方法搜索当前tag的所有tag子节点,并判断是否符合过滤器的条件
-    a = soup.find_all("a")  # 在soup对象中找所有的a标签
+
+    # 有些tag属性在搜索不能使用,比如HTML5中的 data-* 属性:
+    # 但是可以通过 find_all() 方法的 attrs 参数定义一个字典参数来搜索包含特殊属性的tag:
+    # data_soup.find_all(attrs={"data-foo": "value"})
+    # [<div data-foo="value">foo!</div>]
+    # re.compile(r"h1user(\s\w+)?")
+    # re.compile(r"http://quote.eastmoney.com/s[hz]\d{6}.html")
+    a = soup.find_all("a", target="_blank", href=re.compile(r"http://quote.eastmoney.com/s[hz]002\d{3}.html"), limit=10)  # 在soup对象中找所有的a标签
     for i in a:  # 遍历a标签的集合
         try:
+            # print(i.string)
             href = i.attrs["href"]
 # 正则 re.findall  的简单用法（返回string中所有与pattern相匹配的全部字串，返回形式为数组）
 # 语法：(返回列表List)=====================['th', 'wh']
 # findall(pattern, string, flags=0)
-            lst.append(re.findall(r"[s][hz]\d{6}", href)[0])
+            shz = re.findall(r"[s][hz]\d{6}", href)[0]
+            lst.append(shz)
+            # =======================================此处有打印,个股编号==============================================================================
+            print(shz)
         except BaseException:
             continue
 
@@ -40,8 +51,11 @@ def getStockList(lst, stockURL):  # 股票列表
 # 获取个股信息
 def getStockInfo(lst, stockURL, fpath):  # 个股信息
     # 遍历股票列表,查询个股信息
+    print(lst)
+    count = 0
     for stock in lst:
         # 查询网址 + 股票编号
+        # https://gupiao.baidu.com/stock/sz002024.html
         url = stockURL + stock + ".html"
         # 获取网页
         html = getHTMLText(url)
@@ -68,7 +82,6 @@ def getStockInfo(lst, stockURL, fpath):  # 个股信息
 #             <span>+0.16%</span>
 #                     </div>
 #         <div class="bets-content">
-            
 #                                             <div class="line1">
 #                     <dl><dt>今开</dt><dd class="s-up">6.02</dd></dl>
 #                     <dl><dt>成交量</dt><dd>563.15万手</dd></dl>
@@ -115,8 +128,11 @@ def getStockInfo(lst, stockURL, fpath):  # 个股信息
             # 写入文件
             with open(fpath, "a", encoding="utf-8") as f:
                 f.write(str(infoDict) + "\n")
-
+                count = count + 1
+                print("\r当前进度:{:.2f}%".format(count*100/len(lst)), end="")
         except BaseException:
+            count = count + 1
+            print("\r当前进度:{:.2f}%".format(count*100/len(lst)), end="")
             traceback.print_exc()
             continue
 
@@ -125,7 +141,8 @@ def main():
     # 股票列表网址
     stock_list_url = 'http://quote.eastmoney.com/stocklist.html'
     # 个股查询网址
-    stock_info_url = 'http://gupiao.baidu.com/stock/'
+    # https://gupiao.baidu.com/stock/sz002024.html
+    stock_info_url = 'https://gupiao.baidu.com/stock/'
     # 股票信息输出到文本
     output_file = "D:/BaiduStockInfo.txt"
     slist = []
