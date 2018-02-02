@@ -30,7 +30,7 @@ def main():
     #because hiding the turtle speeds up the drawing observably.
     #p.speed(10)
    # p.getscreen().tracer(1,0)#Return the TurtleScreen object the turtle is drawing on.
-    p.speed(160)
+    p.speed(6)
     #TurtleScreen methods can then be called for that object.
     p.left(90)# Turn turtle left by angle units. direction 调整画笔
  

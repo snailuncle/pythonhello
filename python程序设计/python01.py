@@ -12,12 +12,12 @@ def drawSnake(rad, angle, len, neckrad):
 
 
 def main():
-    color = "blue"
+    color = "purple"
     turtle.setup(1300, 800, 0, 0)
     pythonsize = 30
     turtle.pensize(pythonsize)
     turtle.pencolor(color)
-    turtle.speed(12)
+    turtle.speed(6)
     turtle.seth(-40)
     drawSnake(40, 80, 5, pythonsize/2)
 
